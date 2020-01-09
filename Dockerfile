@@ -8,13 +8,17 @@ ENV CONF_VERSION  7.2.0
 ENV JAVA_CACERTS  $JAVA_HOME/jre/lib/security/cacerts
 ENV CERTIFICATE   $CONF_HOME/certificate
 
+RUN apk add shadow
+RUN /usr/sbin/groupadd -g 1000520000 confluence
+RUN /usr/sbin/useradd -s /bin/sh -g 1000520000 -u 1000520000 --no-log-init confluence
+
 # Install Atlassian Confluence and helper tools and setup initial home
 # directory structure.
 RUN set -x \
     && apk --no-cache add curl xmlstarlet bash ttf-dejavu libc6-compat gcompat \
     && mkdir -p                "${CONF_HOME}" \
     && chmod -R 700            "${CONF_HOME}" \
-    && chown daemon:daemon     "${CONF_HOME}" \
+    && chown confluence:confluence     "${CONF_HOME}" \
     && mkdir -p                "${CONF_INSTALL}/conf" \
     && curl -Ls                "https://www.atlassian.com/software/confluence/downloads/binary/atlassian-confluence-${CONF_VERSION}.tar.gz" | tar -xz --directory "${CONF_INSTALL}" --strip-components=1 --no-same-owner \
     && curl -Ls                "https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-5.1.44.tar.gz" | tar -xz --directory "${CONF_INSTALL}/confluence/WEB-INF/lib" --strip-components=1 --no-same-owner "mysql-connector-java-5.1.44/mysql-connector-java-5.1.44-bin.jar" \
@@ -22,10 +26,10 @@ RUN set -x \
     && chmod -R 700            "${CONF_INSTALL}/temp" \
     && chmod -R 700            "${CONF_INSTALL}/logs" \
     && chmod -R 700            "${CONF_INSTALL}/work" \
-    && chown -R daemon:daemon  "${CONF_INSTALL}/conf" \
-    && chown -R daemon:daemon  "${CONF_INSTALL}/temp" \
-    && chown -R daemon:daemon  "${CONF_INSTALL}/logs" \
-    && chown -R daemon:daemon  "${CONF_INSTALL}/work" \
+    && chown -R confluence:confluence  "${CONF_INSTALL}/conf" \
+    && chown -R confluence:confluence  "${CONF_INSTALL}/temp" \
+    && chown -R confluence:confluence  "${CONF_INSTALL}/logs" \
+    && chown -R confluence:confluence  "${CONF_INSTALL}/work" \
     && echo -e                 "\nconfluence.home=$CONF_HOME" >> "${CONF_INSTALL}/confluence/WEB-INF/classes/confluence-init.properties" \
     && xmlstarlet              ed --inplace \
         --delete               "Server/@debug" \
@@ -43,7 +47,7 @@ RUN set -x \
 # Use the default unprivileged account. This could be considered bad practice
 # on systems where multiple processes end up being executed by 'daemon' but
 # here we only ever run one process anyway.
-USER daemon:daemon
+USER confluence:confluence
 
 # Expose default HTTP connector port.
 EXPOSE 8090 8091
